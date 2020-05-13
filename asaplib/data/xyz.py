@@ -8,6 +8,8 @@ from ase.io import read, write
 from ..io import randomString,  NpEncoder
 from ..descriptors import Atomic_Descriptors, Global_Descriptors
 
+from tqdm.auto import tqdm
+
 
 class ASAPXYZ:
     def __init__(self, fxyz=None, stride=1, periodic=True):
@@ -186,7 +188,7 @@ class ASAPXYZ:
         # business! Intialize a Global_Descriptors object
         global_desc = Global_Descriptors(desc_spec_dict)
 
-        for i in sbs:
+        for i in tqdm(sbs):
             frame = self.frames[i]
             # compute atomic descriptor
             desc_dict_now, atomic_desc_dict_now = global_desc.compute(frame)
