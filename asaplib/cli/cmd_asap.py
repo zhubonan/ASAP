@@ -215,7 +215,7 @@ def run(ctx):
     # Compute the save the descriptors
     output_desc(ctx.obj['asapxyz'], ctx.obj['descriptors'], ctx.obj['desc_options']['prefix'])
 
-@asap.group('cluster')
+@asap.group('cluster', chain=True)
 @click.pass_context
 @io_options
 @dm_io_options
@@ -512,6 +512,67 @@ def pca(ctx, scale, dimension, axes):
                    'parameter':{"n_components": dimension, "scalecenter": scale}}
                   }
     map_process(ctx.obj, reduce_dict, axes, map_name)
+
+@cluster.command('plot_pca')
+@click.pass_context
+@color_setup_options
+@d_reduce_options
+@map_setup_options
+@click.option('--prefix', '-p', help='Prefix to be used for the output file.', default=None)
+def plot_pca(ctx, scale, dimension, axes, color,
+             color_from_zero, color_label, color_column,
+             keepraw, peratom, output, adjusttext, annotate, aspect_ratio, style, prefix):
+    """Does some of the map and """
+    # remove the raw descriptors
+    design_matrix = ctx.obj['design_matrix']
+    if not keepraw:
+        ctx.obj['asapxyz'].remove_descriptors(design_matrix)
+        ctx.obj['asapxyz'].remove_atomic_descriptors(design_matrix)   
+    # color scheme
+    use_atomic_descriptors = ctx.obj['cluster_options'].get('use_atomic_descriptors')
+    plotcolor, plotcolor_peratom, colorlabel, colorscale = set_color_function(color,
+    
+     ctx.obj['asapxyz'], color_column, 0, peratom, use_atomic_descriptors, color_from_zero)
+    if color_label is not None: colorlabel = color_label
+
+    ctx.obj['map_options'] =  { 'color': plotcolor,
+                             'color_atomic': plotcolor_peratom,
+                             'project_atomic': use_atomic_descriptors,
+                             'peratom': peratom,
+                             'annotate': [],
+                             'outmode': output,
+                             'keepraw': keepraw
+                           }
+    if annotate != 'none':
+        ctx.obj['map_options']['annotate'] = np.loadtxt(annotate, dtype="str")[:]
+
+
+    ctx.obj['fig_options'] = { 'outfile': prefix,
+                                 'show': False,
+                                 'title': None,
+                                 'size': [8*aspect_ratio, 8],
+                                 'components':{ 
+                                  "first_p": {"type": 'scatter', 'clabel': colorlabel, 
+                                  'vmin': colorscale[0], 'vmax': colorscale[0]},
+                                  "second_p": {"type": 'annotate', 'adtext': adjusttext}}
+                                }
+
+    if style == 'journal':
+        ctx.obj['fig_options'].update({'xlabel': None, 'ylabel': None,
+                                         'xaxis': False,  'yaxis': False,
+                                         'remove_tick': True,
+                                         'rasterized': True,
+                                         'fontsize': 12,
+                                         'size': [4*aspect_ratio, 4]
+                                         })
+
+    map_name = "pca-d-"+str(dimension)
+    reduce_dict = {'pca': {
+                   'type': 'PCA', 
+                   'parameter':{"n_components": dimension, "scalecenter": scale}}
+                  }
+    map_process(ctx.obj, reduce_dict, axes, map_name)
+
 
 @map.command('skpca')
 @click.option('--n_sparse', '-n', type=int, 
