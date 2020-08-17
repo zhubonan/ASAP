@@ -61,6 +61,7 @@ def select(ctx, fxyz, design_matrix,
     """
     Select a subset of frames using sparsification algorithms
     """
+    import numpy as np
 
     if not fxyz and not design_matrix[0]:
         return
@@ -73,7 +74,7 @@ def select(ctx, fxyz, design_matrix,
     sbs = sparsifier.sparsify(ctx.obj['design_matrix'], nkeep)
     # save
     if savetxt:
-        selection = np.zeros(asapxyz.get_num_frames(), dtype=int)
+        selection = np.zeros(ctx.obj['asapxyz'].get_num_frames(), dtype=int)
         for i in sbs:
             selection[i] = 1
         np.savetxt(prefix + '.index', selection, fmt='%d')
